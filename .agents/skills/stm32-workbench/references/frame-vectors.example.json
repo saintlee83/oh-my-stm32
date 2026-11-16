@@ -1,0 +1,7 @@
+{
+  "vectors": [
+    {"id": 7, "command": 16, "payload_hex": "01 02 03", "frame_hex": "A5 5A 03 00 07 10 01 02 03 14 0D 0A"},
+    {"id": 0, "command": 1, "payload_hex": "", "frame_hex": "A5 5A 00 00 00 01 01 0D 0A"}
+  ],
+  "invalid_frames": ["", "A5 5A 00 00 00 01 FF 0D 0A", "A5 5A 00 00 00 01 01 00 00"]
+}

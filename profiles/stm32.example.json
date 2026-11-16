@@ -1,0 +1,10 @@
+{
+  "workspace": "../firmware",
+  "pc_app": "../host-app",
+  "ide": "../tools/STM32CubeIDE",
+  "targets": {
+    "app": "BoardApp",
+    "bootloader": "BoardBootloader",
+    "variant": "BoardAppVariant"
+  }
+}

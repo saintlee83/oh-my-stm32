@@ -1,0 +1,4 @@
+interface:
+  display_name: "STM32 Workbench"
+  short_description: "Inspect STM32 projects, peripherals, protocols and builds"
+  default_prompt: "Use $stm32-workbench to inspect the selected STM32 project and its build, peripheral or host protocol settings, then implement and validate the requested change."

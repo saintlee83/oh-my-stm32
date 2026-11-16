@@ -1,0 +1,12 @@
+{
+  "name": "example-packet",
+  "start_hex": "A5 5A",
+  "end_hex": "0D 0A",
+  "length_bytes": 2,
+  "length_counts": "payload",
+  "id_bytes": 1,
+  "command_bytes": 1,
+  "byteorder": "little",
+  "checksum": "xor8",
+  "checksum_scope": "body"
+}
