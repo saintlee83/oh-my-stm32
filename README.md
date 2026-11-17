@@ -1,89 +1,220 @@
+<div align="center">
+
 # oh-my-stm32
 
-An offline toolkit for agents working with STM32 firmware and host applications. Use it to identify projects, compare source and configuration files, prepare CubeIDE build commands, and check byte frames against a supplied protocol specification.
+**Inspect firmware. Compare changes. Prepare the next build.**
 
-The CLI runs on Python 3.10+ with the standard library. It reads local files and returns JSON; it does not run project code, start build tools, or connect to hardware. Project paths, board settings, and protocol definitions come from your inputs.
+An offline STM32 toolkit with structured JSON reports and a portable agent skill.
 
-## Inspect a project
+[![CLI version 0.2.0](https://img.shields.io/badge/CLI-v0.2.0-2563eb?style=flat-square)](.agents/skills/stm32-workbench/scripts/stm32kit/__init__.py)
+[![Python 3.10 or newer](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square)](#requirements)
+[![Standard library only](https://img.shields.io/badge/runtime-standard_library-0f766e?style=flat-square)](#requirements)
+[![MIT license](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](LICENSE)
 
-Run these commands from the repository root, replacing the example paths with your own:
+[Quick start](#quick-start) · [Inside the kit](#inside-the-kit) · [Agent setup](#agent-setup) · [Workflows](#workflows) · [Validation](#validation)
 
-```text
+</div>
+
+---
+
+Move from an unfamiliar firmware workspace to an identified project, a reviewable comparison, and a build plan. The kit combines a Python CLI for repeatable file analysis with task guides for firmware, host protocols, bootloaders, and debugging.
+
+All CLI operations run locally. Project paths, board settings, and wire protocols come from your inputs. Tool execution and hardware sessions remain separate, explicit operations.
+
+## Quick start
+
+### 1. Get the source kit
+
+```sh
+git clone https://github.com/saintlee83/oh-my-stm32.git
+cd oh-my-stm32
+python stm32tool.py --version
+```
+
+Expected version: `0.2.0`. Use `python3` if that is your Python 3 command.
+
+### 2. Run the bundled demo
+
+Verify the synthetic protocol fixtures included in the kit. This works immediately after cloning, without a firmware project or connected board.
+
+```sh
+python stm32tool.py frame verify --spec .agents/skills/stm32-workbench/references/frame.example.json --vectors .agents/skills/stm32-workbench/references/frame-vectors.example.json
+```
+
+Key fields from the JSON result:
+
+```json
+{
+  "protocol": "example-packet",
+  "vectors_checked": 2,
+  "invalid_frames_checked": 3,
+  "errors": [],
+  "hardware_access": false
+}
+```
+
+### 3. Point it at your firmware
+
+Replace the example paths with your own. Quote paths containing spaces.
+
+```sh
 python stm32tool.py inventory --root /path/to/firmware
 python stm32tool.py inspect --project /path/to/firmware/BoardApp
 ```
 
-Start with `inventory` when several projects or archived copies share a workspace. It reports Eclipse names, relative paths, build configurations, duplicate names, and read errors. Use an exact project directory for `inspect`, then check the configuration's selected linker script and any warnings before making changes.
+`inventory` finds candidates and duplicate Eclipse names. `inspect` reads the selected project's configurations, IOC settings, linker declarations, source observations, and evidence hashes.
 
-For repeated work, copy the [example profile](profiles/stm32.example.json) to `profiles/workspace.local.json` and set `workspace`, `ide`, `pc_app`, and `targets`:
+## Requirements
+
+| Component | Requirement |
+|---|---|
+| CLI runtime | Python 3.10+; standard library only |
+| Installation | Run directly from the checkout; no `pip install` step |
+| Project discovery and build planning | STM32CubeIDE/Eclipse metadata |
+| Frame verification | An explicit JSON specification and independent reference bytes |
+| Build execution | A separately installed toolchain and a reviewed build plan |
+| Hardware work | A separately configured board/probe session within the requested task |
+
+For CMake/Make, Keil, and IAR projects, the agent guides cover inspection of native build files. Automatic metadata parsing and command generation target CubeIDE/Eclipse.
+
+## Inside the kit
+
+| Component | Location | Purpose |
+|---|---|---|
+| Repository CLI | [`stm32tool.py`](stm32tool.py) | One entry point for discovery, inspection, comparisons, and protocol checks |
+| Portable agent skill | [`stm32-workbench/`](.agents/skills/stm32-workbench/) | Instructions, reference guides, and a bundled copy of the CLI |
+| Workspace profile | [`stm32.example.json`](profiles/stm32.example.json) | Reusable roots, tool locations, and project aliases |
+| Protocol demo | [Specification](.agents/skills/stm32-workbench/references/frame.example.json) · [Reference vectors](.agents/skills/stm32-workbench/references/frame-vectors.example.json) | A runnable example with valid and invalid frames |
+| Regression suite | [`tests/`](tests/) | Synthetic fixtures for project, comparison, protocol, and CLI behavior |
+| Verification record | [`docs/validation.md`](docs/validation.md) | Recorded environments, results, coverage, and limits |
+
+The complete `.agents/skills/stm32-workbench/` folder also works independently of the repository entry point.
+
+## Agent setup
+
+Copy the complete skill folder to `<your-workspace>/.agents/skills/stm32-workbench/`, or give the agent the path to its [`SKILL.md`](.agents/skills/stm32-workbench/SKILL.md). Keep `scripts/` and `references/` with it.
+
+Start with a concrete task:
 
 ```text
+Use $stm32-workbench to inspect /path/to/firmware/BoardApp.
+Identify the active build configuration, pin initialization, and host
+command handling. List the files and checks needed for my requested change.
+```
+
+The copied skill includes its own CLI entry point:
+
+```sh
+python /path/to/stm32-workbench/scripts/stm32_toolkit.py --help
+```
+
+## Workflows
+
+<details open>
+<summary><strong>Inspect a workspace with reusable project aliases</strong></summary>
+
+Copy [the example profile](profiles/stm32.example.json) to `profiles/workspace.local.json`. Set `workspace`, `ide`, `pc_app`, and `targets` for your environment.
+
+```sh
 python stm32tool.py --profile profiles/workspace.local.json inventory
 python stm32tool.py --profile profiles/workspace.local.json inspect --project app
 ```
 
-Profile root paths resolve relative to the profile file. Target aliases resolve relative to its `workspace`. Put global options such as `--profile` and `--output` before the command.
+Profile roots resolve relative to the profile file; target aliases resolve relative to its `workspace`. Identify a target by both its exact directory and Eclipse project name. Check configuration-specific linker selection and inspection warnings before editing.
 
-## Choose the next operation
+</details>
 
-| Task | Command | What it establishes |
-|---|---|---|
-| Find projects and inspect configuration | `inventory`, `inspect` | CubeIDE/Eclipse metadata, IOC settings, linker declarations, selected source observations, and file hashes |
-| Compare saved project lists | `inventory-diff` | Changes to project presence and metadata, matched by relative path |
-| Compare firmware variants | `compare-projects` | File changes and SHA-256 hashes within the supported source and settings scope |
-| Compare CubeMX settings | `ioc-diff` | Pin, MCU, RCC, and NVIC changes, or all keys with `--all-settings` |
-| Find tools and prepare a build | `doctor`, `build-plan` | Tool locations and a headless command to review and run separately |
-| Locate command definitions | `contract` | Python enum members and numeric C case labels, read without executing the inputs |
-| Check a byte envelope | `frame encode/decode/verify` | Encoding, decoding, and reference-vector checks for an explicit JSON specification |
+<details>
+<summary><strong>Compare a baseline, a variant, or a fresh inventory</strong></summary>
 
-```text
+```sh
 python stm32tool.py compare-projects --before /path/to/baseline --after /path/to/variant --text-diff
 python stm32tool.py ioc-diff --before /path/to/baseline/board.ioc --after /path/to/variant/board.ioc
+python stm32tool.py inventory-diff --before reports/inventory-before.json --after reports/inventory-after.json
+```
+
+Project comparisons report raw SHA-256 differences with optional text previews. Add `--include-vendor` for Drivers and Middlewares, or `--all-settings` to compare every IOC key.
+
+Collect inventories with the same scope and exclusions. An incomplete scan reports unmatched entries as observations; it cannot confirm additions or deletions. Source comparison excludes linked resources, binary images, documentation, and common build-output directories. See the [CLI reference](.agents/skills/stm32-workbench/references/cli.md) for the exact scope.
+
+</details>
+
+<details>
+<summary><strong>Locate tools and prepare a CubeIDE build</strong></summary>
+
+```sh
 python stm32tool.py doctor --ide /path/to/STM32CubeIDE
 python stm32tool.py build-plan --project /path/to/firmware/BoardApp --ide /path/to/launcher --workspace .build-workspaces/app --configuration Debug
 ```
 
-A build plan requires a new or empty workspace separate from the source project. Its JSON includes argument lists and PowerShell/POSIX commands. Executing a generated command can write build outputs and run project hooks in the imported source directory; use a prepared copy when source isolation matters.
+`doctor` discovers tool files without running them. `build-plan` returns argv plus PowerShell and POSIX commands for the selected configuration.
 
-## Verify a protocol
+Choose a new or empty build workspace separate from the source project. Executing the generated command can write outputs and run hooks in the imported source directory. Prepare a project copy when source isolation matters, and review linked resources and dependencies before execution.
 
-There is no built-in STM32 application protocol. Every `frame` operation requires `--spec`. The bundled specification and vectors are synthetic examples:
+</details>
 
-```text
-python stm32tool.py frame encode --spec .agents/skills/stm32-workbench/references/frame.example.json --id 7 --command 0x10 --payload "01 02 03"
-python stm32tool.py frame verify --spec .agents/skills/stm32-workbench/references/frame.example.json --vectors .agents/skills/stm32-workbench/references/frame-vectors.example.json
+<details>
+<summary><strong>Inspect host commands and check protocol bytes</strong></summary>
+
+```sh
 python stm32tool.py contract --commands /path/to/host/commands.py --firmware /path/to/firmware/parser.c
+python stm32tool.py frame encode --spec .agents/skills/stm32-workbench/references/frame.example.json --id 7 --command 0x10 --payload "01 02 03"
 ```
 
-Supply independently established wire bytes for real verification. See the [protocol guide](.agents/skills/stm32-workbench/references/protocol.md) for the schema, supported checksums, and boundaries of these checks.
+`contract` indexes Python enums and numeric C case locations without importing the host application. `frame encode`, `decode`, and `verify` require `--spec`; there is no built-in STM32 application protocol.
 
-## Use the agent skill
+The codec supports a fixed byte envelope with configurable integer fields and simple checksums. Use independently established wire bytes for verification. Stream reassembly, escaping, CRC, and application response semantics require the project's own implementation and tests.
 
-Start with [STM32 Workbench](.agents/skills/stm32-workbench/SKILL.md):
+</details>
 
-> Use $stm32-workbench to inspect the selected project's build configuration, pin initialization, and host command handling. Identify the files and checks needed for the requested change.
+## Output contract
 
-To use it in another workspace, copy the complete `.agents/skills/stm32-workbench` directory into that workspace's skill directory, or provide the path to `SKILL.md`. Its CLI and references are self-contained. From a copied skill, run `python PATH/scripts/stm32_toolkit.py`.
+Commands return JSON to stdout. Add `--output NEW_FILE` before the command to save a report; create its parent directory first. Existing files are never overwritten.
 
-| Guide | Read it for |
+```sh
+python stm32tool.py --output reports/inventory-first.json inventory --root /path/to/firmware
+```
+
+| Exit code | Meaning |
 |---|---|
-| [Project analysis](.agents/skills/stm32-workbench/references/project-analysis.md) | Target selection, fresh inventories, and evidence from multiple variants |
-| [Firmware](.agents/skills/stm32-workbench/references/firmware.md) | CubeMX, initialization, clocks, interrupts, DMA, and RTOS changes |
-| [Protocols](.agents/skills/stm32-workbench/references/protocol.md) | Host/firmware contracts, frame specifications, and reference vectors |
-| [Build and debug](.agents/skills/stm32-workbench/references/build-debug.md) | Toolchains, build isolation, memory layout, bootloaders, and ST-LINK |
-| [Diagnostics](.agents/skills/stm32-workbench/references/diagnostics.md) | Diagnostic images, RAM layouts, and the limits of each observation |
-| [CLI reference](.agents/skills/stm32-workbench/references/cli.md) | Arguments, path resolution, output fields, and exit codes |
+| `0` | Completed without reported errors |
+| `1` | Partial results or a reference-vector mismatch; inspect `errors` |
+| `2` | Invalid input or a file-access failure |
 
-The metadata reader and build planner support CubeIDE/Eclipse projects. For CMake/Make, Keil, or IAR projects, the skill guides inspection of the native build files. Static reports do not establish build success, firmware provenance, or device behavior.
+Argument-parser errors and help use ordinary CLI text. Missing tools in `doctor.missing` do not cause a failing exit code.
 
-## Reports and development
+Keep local reports in git-ignored `reports/` and personal paths in `profiles/*.local.json`. Shared examples and tests use synthetic data.
 
-Use `--output NEW_FILE` to save JSON. Create the parent directory first; the CLI refuses to overwrite an existing file. Exit code `0` means the operation completed without reported errors, `1` means a partial result or vector mismatch, and `2` means invalid input or a read/write error. Missing tools listed by `doctor` do not cause a failing exit code.
+## Validation
 
-Keep full inventories and analysis reports in git-ignored `reports/`, and personal paths in `profiles/*.local.json`. Shared examples and tests use synthetic data.
+**46 tests passed** in the recorded Windows/Python 3.13.11 run. The [validation record](docs/validation.md) also documents the earlier macOS run and the limits of both.
 
-```text
+| Check | Recorded result |
+|---|---|
+| Regression suite | 46 passed, no skips |
+| Standalone skill | Two reference frames matched; three invalid frames rejected |
+| Skill structure | Validator passed |
+| Minimum-version syntax | All 10 Python files parsed using Python 3.10 syntax rules |
+
+Run the suite from the repository root:
+
+```sh
 python -m unittest discover -s tests -v
 ```
 
-The [validation record](docs/validation.md) describes the checks performed and their limits.
+Python 3.10 syntax checks do not establish execution under that interpreter. Static analysis and host tests do not establish ARM build success, ELF provenance, flash behavior, or device compatibility. Those results require separate build or hardware evidence.
+
+## Reference library
+
+| Guide | Coverage |
+|---|---|
+| [Project analysis](.agents/skills/stm32-workbench/references/project-analysis.md) | Target selection, fresh inventories, variant comparisons, and evidence |
+| [Firmware](.agents/skills/stm32-workbench/references/firmware.md) | CubeMX, initialization, clocks, interrupts, DMA, and RTOS |
+| [Protocols](.agents/skills/stm32-workbench/references/protocol.md) | Host contracts, frame specifications, reference vectors, and failure cases |
+| [Build and debug](.agents/skills/stm32-workbench/references/build-debug.md) | Toolchains, source isolation, memory maps, bootloaders, and ST-LINK |
+| [Diagnostics](.agents/skills/stm32-workbench/references/diagnostics.md) | Diagnostic images, RAM layouts, and observation methods |
+| [CLI reference](.agents/skills/stm32-workbench/references/cli.md) | Arguments, path resolution, comparison scope, and exit behavior |
+
+---
+
+Released under the [MIT License](LICENSE). Copyright © 2026 Saint Lee.
