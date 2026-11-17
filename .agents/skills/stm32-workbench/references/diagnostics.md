@@ -1,22 +1,28 @@
-# 진단 이미지와 관찰 근거
+# Diagnostic images and observations
 
-## 기준 이미지와 진단 변형
+A diagnostic image can change the behavior being investigated. Establish which image produced each observation and what the observation method can demonstrate.
 
-변형 이름이나 날짜만으로 기준본을 추정하지 않는다. 새 `inventory`를 이전 로컬 보고서와 비교하고 관련 소스를 `compare-projects`로 대조한다. manifest가 있으면 원본 경로·해시·변경 목록을 실제 파일과 확인한다.
+## Establish the baseline and variant
 
-진단용 코드가 출력 잠금, reset 대체, watchdog 변경, 추가 polling, logging을 수행하는지 확인한다. 일반 이미지와 같은 동작이라고 가정하지 않는다. IOC와 C 초기화, 링커, 기존 BIN 비교는 각각 별도 근거다. 저장된 build 성공 기록은 새 빌드 검증으로 세지 않는다.
+Refresh the project inventory, compare it with the earlier local report, and use `compare-projects` on the relevant sources. A variant name or date does not identify its baseline. If a manifest exists, verify its source path, hashes, and change list against the files.
 
-## RAM 구조와 host decoder
+Look for diagnostic changes such as locked outputs, replaced reset behavior, altered watchdog handling, extra polling, and logging. Keep IOC comparisons, C initialization, linker changes, and existing BIN comparisons as separate evidence. A saved successful-build log describes an earlier run.
 
-해당 프로젝트의 C 선언과 host reader를 대조하여 다음을 기록한다.
+## Reconcile RAM structures with the host reader
 
-- 심볼, magic/version, 구조 크기·정렬·padding, 필드 offset·타입·endianness.
-- MCU에서 접근 가능한 메모리 영역과 읽기 범위, host의 크기·주소·버전 검사.
-- writer/read 시점, snapshot 일관성, counter wrap, 유효·미완료·오류 상태.
-- 초기 부팅 한 번의 기록인지, 반복 scan인지, overflow나 reset으로 사라지는지.
+Compare the project's C declaration with the host decoder and record the properties needed to interpret a snapshot:
 
-다른 펌웨어의 구조 크기나 SRAM 범위를 적용하지 않는다. host decoder 테스트에는 합성 메모리와 버전·길이·정렬·잘못된 주소의 실패 사례를 사용한다. 이 테스트는 실제 C ABI의 빌드나 장비 이미지 일치를 증명하지 않는다.
+| Area | What to establish |
+|---|---|
+| Layout | Symbol, magic/version, structure size, alignment, padding, field offsets, types, and byte order |
+| Bounds | MCU-accessible memory, intended read range, and host size/address/version checks |
+| Consistency | Writer and reader timing, snapshot rules, counter wrap, and valid/incomplete/error states |
+| Lifetime | One-time boot record or repeated sample, and whether overflow or reset clears the data |
 
-## 관찰 구분
+Use the selected firmware's layout and SRAM ranges. Test the host reader with synthetic memory, including failures for incorrect versions, lengths, alignment, and addresses. Such tests exercise decoder behavior; the actual compiled C ABI and the board's image still need separate evidence.
 
-소스에서 보이는 초기값, 저장된 ELF/BIN, 새 컴파일, 모의 메모리 테스트, 프로브 읽기, 실제 파형을 구분한다. 보고서에 관찰 시점과 입력 식별자를 남긴다. 장비 진단은 요청된 보드·프로브·이미지 범위에서 진행하고 CPU 정지 및 복귀 상태를 기록한다.
+## State what was observed
+
+Distinguish initial values visible in source, stored ELF/BIN artifacts, a new compilation, simulated memory, probe reads, and measured waveforms. Record the observation time and input identifiers in the report.
+
+Keep a hardware session within the requested board, probe, and image scope. Record CPU halt/resume state and any observation method that could alter timing. This lets later investigators judge whether a result applies to normal operation, a diagnostic variant, or a simulated input.

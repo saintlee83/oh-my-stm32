@@ -1,14 +1,24 @@
-# oh-my-stm32 작업 지침
+# Working on oh-my-stm32
 
-이 저장소는 STM32 프로젝트를 읽고 작업을 준비하는 툴킷이다. 펌웨어 소스 저장소가 아니다.
+This repository contains an offline analysis toolkit and a portable agent skill. Firmware and host application paths supplied to the toolkit are inputs, outside the scope of toolkit maintenance.
 
-- STM32 작업은 `.agents/skills/stm32-workbench/SKILL.md`에서 시작한다. 필요한 reference만 읽는다.
-- 입력 펌웨어/PC 앱 경로는 분석 대상이다. 이 툴킷 개발 요청으로 그 소스를 수정하지 않는다.
-- 프로젝트 선택에는 절대 경로와 `.project` 이름을 함께 기록한다. 폴더명·mtime·배포 기록만으로 현재 타깃을 결정하지 않는다.
-- 추가 조사에서는 기존 해시만 재검사하지 말고 `inventory`를 다시 수집한다. `reports/`에 보관한 이전 인벤토리와 `inventory-diff`로 비교한 뒤 필요한 대상만 `compare-projects`로 대조한다. 기존 근거와 후속 근거를 구분해서 보존한다.
-- Python 3.10+ 표준 라이브러리, JSON 결과, 명확한 실패 종료 코드를 유지한다.
-- `build-plan`은 명령 생성 기능이다. 실행이나 플래시/시리얼 접근을 묵시적으로 추가하지 않는다.
-- 검증: `python -m unittest discover -s tests -v`. 외부 통신 명세는 `frame verify --spec SPEC --vectors VECTORS`로 제공된 기준 바이트와 대조한다. 외부 앱을 import하지 않는다.
-- 전체 인벤토리는 `reports/`, 개인 설정은 `profiles/*.local.json`에 둔다. 커밋하는 근거는 상대 경로·해시·관찰 시점을 사용한다.
-- 회사·제품·고객명, 실제 프로젝트 경로·핀맵·메모리 배치·통신 명령·분석 스냅샷을 공용 코드와 문서에 넣지 않는다. 예제와 테스트는 합성 데이터를 사용하며 보드별 값은 사용자가 지정한다.
-- Windows 파일은 UTF-8로 읽고 쓴다. 원본이 다른 인코딩이면 먼저 확인하고 변환은 별도 변경으로 취급한다.
+## Repository conventions
+
+- Keep the runtime on the Python 3.10+ standard library. Preserve JSON results, explicit error reporting, and documented exit codes.
+- Write documentation, instructions, examples, and messages in English. Preserve Unicode path support in the implementation and tests.
+- Read and write text as UTF-8. If an input uses another encoding, identify it before proposing a separate conversion.
+- Keep examples and fixtures synthetic. Do not add real organization, product, or customer identifiers, project paths, pin maps, memory layouts, private command definitions, or analysis snapshots.
+- Store full local reports in `reports/` and personal profiles in `profiles/*.local.json`. Shared evidence should use relative paths, hashes, and observation times.
+
+## Behavior to preserve
+
+- `build-plan` generates commands only. Toolkit changes must not introduce implicit tool execution, flashing, or serial access.
+- Read command definitions statically. Do not import a host application to inspect or verify its protocol.
+- Identify CubeIDE targets by both absolute directory and `.project` name. Folder names, timestamps, and deployment history are insufficient to select the active target.
+- For follow-up investigations, collect a fresh `inventory`, compare it with the previous report using `inventory-diff`, then use `compare-projects` for relevant candidates. Retain earlier observations separately from new evidence.
+
+For work on a user's STM32 project, start with [.agents/skills/stm32-workbench/SKILL.md](.agents/skills/stm32-workbench/SKILL.md) and load the references needed for that task.
+
+## Validation
+
+Run `python -m unittest discover -s tests -v` and `git diff --check`. For a supplied wire protocol, compare independent reference bytes with `frame verify --spec SPEC --vectors VECTORS`. Report static checks, host tests, compilation, and hardware observations separately.

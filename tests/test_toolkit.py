@@ -116,7 +116,7 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(project.ioc_diff(before, after, True)["changed"], 3)
 
     def test_build_plan_uses_eclipse_name_and_quotes_without_execution(self):
-        directory = fixture(self.root, "보드 (복사본)", "App.v2")
+        directory = fixture(self.root, "Board \u2603 (copy)", "App.v2")
         ide = self.root / "IDE 'tools'"
         ide.mkdir()
         (ide / "stm32cubeidec.exe").write_text("not executable")
@@ -226,9 +226,9 @@ class CliTests(unittest.TestCase):
     def test_profile_relative_target_from_different_cwd(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            fixture(root / "fw", "보드", "App")
+            fixture(root / "fw", "Board \u2603", "App")
             profile = root / "profile.json"
-            profile.write_text(json.dumps({"workspace": "fw", "targets": {"alias": "보드"}}), encoding="utf-8")
+            profile.write_text(json.dumps({"workspace": "fw", "targets": {"alias": "Board \u2603"}}), encoding="utf-8")
             status, output, error = self.run_cli(["--profile", str(profile), "inspect", "--project", "alias"])
             self.assertEqual((status, error), (0, ""))
             self.assertEqual(json.loads(output)["name"], "App")
