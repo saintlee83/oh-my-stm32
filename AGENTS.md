@@ -14,6 +14,7 @@ This repository contains an offline analysis toolkit and a portable agent skill.
 
 - `build-plan` generates commands only. Toolkit changes must not introduce implicit tool execution, flashing, or serial access.
 - Read command definitions statically. Do not import a host application to inspect or verify its protocol.
+- Preserve the versioned CLI JSON contract in `.agents/skills/stm32-workbench/references/output-contract.md`. Keep wire-level `command` values separate from CLI `operation` metadata and retain legacy inventory support.
 - Identify CubeIDE targets by both absolute directory and `.project` name. Folder names, timestamps, and deployment history are insufficient to select the active target.
 - For follow-up investigations, collect a fresh `inventory`, compare it with the previous report using `inventory-diff`, then use `compare-projects` for relevant candidates. Retain earlier observations separately from new evidence.
 
@@ -22,3 +23,5 @@ For work on a user's STM32 project, start with [.agents/skills/stm32-workbench/S
 ## Validation
 
 Run `python -m unittest discover -s tests -v` and `git diff --check`. For a supplied wire protocol, compare independent reference bytes with `frame verify --spec SPEC --vectors VECTORS`. Report static checks, host tests, compilation, and hardware observations separately.
+
+Run `python scripts/check_skill_bundle.py` for portable-skill changes. For result-contract changes, install `requirements-dev.txt` in a development environment and run `python scripts/check_contract.py`. Real CubeIDE compilation is an explicit development step through `scripts/verify_cubeide.py`; keep it outside the normal CLI and unit suite. See `docs/development.md` for reproduction and evidence handling.

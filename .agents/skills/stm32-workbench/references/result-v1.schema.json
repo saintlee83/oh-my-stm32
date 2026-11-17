@@ -1,0 +1,435 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "oh-my-stm32 CLI results, schema major 1",
+  "description": "Additional fields and later minor versions are allowed. The numeric frame command field retains its existing meaning.",
+  "type": "object",
+  "required": ["schema_version","toolkit_version","operation"],
+  "properties": {
+    "schema_version": {"type":"string","pattern":"^1\\.[0-9]+$"},
+    "toolkit_version": {"type":"string","minLength":1},
+    "operation": {
+      "enum": [
+        "inventory",
+        "inspect",
+        "doctor",
+        "build-plan",
+        "ioc-diff",
+        "inventory-diff",
+        "compare-projects",
+        "frame.encode",
+        "frame.decode",
+        "frame.verify",
+        "contract"
+      ]
+    }
+  },
+  "oneOf": [
+    {"required":["error"],"properties":{"error":{"type":"string","minLength":1}}},
+    {
+      "type": "object",
+      "required": ["operation","root","project_count","projects","duplicate_names","skipped_directories","errors","note"],
+      "properties": {
+        "operation": {"const":"inventory"},
+        "root": {"type":"string"},
+        "project_count": {"type":"integer","minimum":0},
+        "projects": {"type":"array","items":{"$ref":"#/$defs/project"}},
+        "duplicate_names": {"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}}},
+        "skipped_directories": {"type":"object","additionalProperties":{"type":"integer","minimum":0}},
+        "errors": {"$ref":"#/$defs/errors"},
+        "note": {"type":"string"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "path",
+        "name",
+        "folder_name",
+        "has_cproject",
+        "configurations",
+        "mcu",
+        "ioc_files",
+        "linked_resources",
+        "referenced_projects",
+        "ioc",
+        "linker_files",
+        "source_observations",
+        "warnings",
+        "evidence",
+        "limitations"
+      ],
+      "properties": {
+        "operation": {"const":"inspect"},
+        "path": {"type":"string"},
+        "name": {"type":"string"},
+        "folder_name": {"type":"string"},
+        "has_cproject": {"type":"boolean"},
+        "configurations": {"type":"array","items":{"$ref":"#/$defs/configuration"}},
+        "mcu": {"type":"array","items":{"type":"string"}},
+        "ioc_files": {"type":"array","items":{"type":"string"}},
+        "linked_resources": {"type":"array","items":{"type":"object"}},
+        "referenced_projects": {"type":"array","items":{"type":"string"}},
+        "ioc": {"type":"array","items":{"type":"object"}},
+        "linker_files": {"type":"array","items":{"type":"object"}},
+        "source_observations": {"type":"array","items":{"type":"object"}},
+        "warnings": {"type":"array","items":{"type":"string"}},
+        "evidence": {"type":"array","items":{"$ref":"#/$defs/evidence"}},
+        "limitations": {"type":"array","items":{"type":"string"}}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": ["operation","ide","tools","missing","ambiguous","note"],
+      "properties": {
+        "operation": {"const":"doctor"},
+        "ide": {"anyOf":[{"type":"string"},{"type":"null"}]},
+        "tools": {"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}}},
+        "missing": {"type":"array","items":{"type":"string"}},
+        "ambiguous": {"type":"array","items":{"type":"string"}},
+        "note": {"type":"string"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "executed",
+        "project",
+        "eclipse_project",
+        "configuration",
+        "workspace",
+        "argv",
+        "powershell",
+        "posix_shell",
+        "warnings",
+        "effects_if_executed",
+        "note"
+      ],
+      "properties": {
+        "operation": {"const":"build-plan"},
+        "executed": {"const":false},
+        "project": {"type":"string"},
+        "eclipse_project": {"type":"string"},
+        "configuration": {"$ref":"#/$defs/configuration"},
+        "workspace": {"type":"string"},
+        "argv": {"type":"array","items":{"type":"string"}},
+        "powershell": {"type":"string"},
+        "posix_shell": {"type":"string"},
+        "warnings": {"type":"array","items":{"type":"string"}},
+        "effects_if_executed": {"type":"array","items":{"type":"string"}},
+        "note": {"type":"string"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": ["operation","before","after","before_sha256","after_sha256","scope","changed","changes","note"],
+      "properties": {
+        "operation": {"const":"ioc-diff"},
+        "before": {"type":"string"},
+        "after": {"type":"string"},
+        "before_sha256": {"$ref":"#/$defs/sha256"},
+        "after_sha256": {"$ref":"#/$defs/sha256"},
+        "scope": {"type":"string"},
+        "changed": {"type":"integer","minimum":0},
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key","before","after"],
+            "properties": {
+              "key": {"type":"string"},
+              "before": {"anyOf":[{"type":"string"},{"type":"null"}]},
+              "after": {"anyOf":[{"type":"string"},{"type":"null"}]}
+            }
+          }
+        },
+        "note": {"type":"string"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "before",
+        "after",
+        "before_sha256",
+        "after_sha256",
+        "comparison_complete",
+        "before_count",
+        "after_count",
+        "added",
+        "removed",
+        "newly_observed",
+        "unobserved_after",
+        "changed",
+        "errors",
+        "limitations"
+      ],
+      "properties": {
+        "operation": {"const":"inventory-diff"},
+        "before": {"type":"string"},
+        "after": {"type":"string"},
+        "before_sha256": {"$ref":"#/$defs/sha256"},
+        "after_sha256": {"$ref":"#/$defs/sha256"},
+        "comparison_complete": {"type":"boolean"},
+        "before_count": {"type":"integer","minimum":0},
+        "after_count": {"type":"integer","minimum":0},
+        "added": {"type":"array","items":{"type":"object"}},
+        "removed": {"type":"array","items":{"type":"object"}},
+        "newly_observed": {"type":"array","items":{"type":"object"}},
+        "unobserved_after": {"type":"array","items":{"type":"object"}},
+        "changed": {"type":"array","items":{"type":"object"}},
+        "errors": {"$ref":"#/$defs/errors"},
+        "limitations": {"type":"array","items":{"type":"string"}}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "before",
+        "after",
+        "include_vendor",
+        "comparison_complete",
+        "file_counts",
+        "changed_count",
+        "changes",
+        "skipped",
+        "errors",
+        "limitations"
+      ],
+      "properties": {
+        "operation": {"const":"compare-projects"},
+        "before": {"type":"string"},
+        "after": {"type":"string"},
+        "include_vendor": {"type":"boolean"},
+        "comparison_complete": {"type":"boolean"},
+        "file_counts": {
+          "type": "object",
+          "required": ["before","after"],
+          "properties": {"before":{"type":"integer","minimum":0},"after":{"type":"integer","minimum":0}}
+        },
+        "changed_count": {"type":"integer","minimum":0},
+        "changes": {"type":"array","items":{"$ref":"#/$defs/change"}},
+        "skipped": {
+          "type": "object",
+          "required": ["before","after"],
+          "properties": {
+            "before": {"type":"array","items":{"type":"object"}},
+            "after": {"type":"array","items":{"type":"object"}}
+          }
+        },
+        "errors": {"$ref":"#/$defs/errors"},
+        "limitations": {"type":"array","items":{"type":"string"}}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": ["operation","protocol","length","id","command","payload_hex","checksum","hex","spec_file","spec_sha256"],
+      "properties": {
+        "operation": {"const":"frame.encode"},
+        "protocol": {"type":"string"},
+        "length": {"type":"integer","minimum":0},
+        "id": {"type":"integer","minimum":0},
+        "command": {"type":"integer","minimum":0},
+        "payload_hex": {"type":"string"},
+        "checksum": {"anyOf":[{"type":"integer","minimum":0,"maximum":255},{"type":"null"}]},
+        "hex": {"type":"string"},
+        "spec_file": {"type":"string"},
+        "spec_sha256": {"$ref":"#/$defs/sha256"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": ["operation","protocol","length","id","command","payload_hex","checksum","hex","spec_file","spec_sha256"],
+      "properties": {
+        "operation": {"const":"frame.decode"},
+        "protocol": {"type":"string"},
+        "length": {"type":"integer","minimum":0},
+        "id": {"type":"integer","minimum":0},
+        "command": {"type":"integer","minimum":0},
+        "payload_hex": {"type":"string"},
+        "checksum": {"anyOf":[{"type":"integer","minimum":0,"maximum":255},{"type":"null"}]},
+        "hex": {"type":"string"},
+        "spec_file": {"type":"string"},
+        "spec_sha256": {"$ref":"#/$defs/sha256"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": [
+        "operation",
+        "protocol",
+        "vectors_checked",
+        "invalid_frames_checked",
+        "errors",
+        "hardware_access",
+        "scope",
+        "vectors_file",
+        "vectors_sha256",
+        "spec_file",
+        "spec_sha256"
+      ],
+      "properties": {
+        "operation": {"const":"frame.verify"},
+        "protocol": {"type":"string"},
+        "vectors_checked": {"type":"integer","minimum":0},
+        "invalid_frames_checked": {"type":"integer","minimum":0},
+        "errors": {"$ref":"#/$defs/errors"},
+        "hardware_access": {"const":false},
+        "scope": {"type":"string"},
+        "vectors_file": {"type":"string"},
+        "vectors_sha256": {"$ref":"#/$defs/sha256"},
+        "spec_file": {"type":"string"},
+        "spec_sha256": {"$ref":"#/$defs/sha256"}
+      },
+      "not": {"required":["error"]}
+    },
+    {
+      "type": "object",
+      "required": ["operation","command_sources","firmware_sources","limitations"],
+      "properties": {
+        "operation": {"const":"contract"},
+        "command_sources": {"type":"array","items":{"$ref":"#/$defs/command_source"}},
+        "firmware_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file","sha256","numeric_case_labels"],
+            "properties": {
+              "file": {"type":"string"},
+              "sha256": {"$ref":"#/$defs/sha256"},
+              "numeric_case_labels": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["value","line"],
+                  "properties": {"value":{"type":"integer"},"line":{"type":"integer","minimum":1}}
+                }
+              }
+            }
+          }
+        },
+        "limitations": {"type":"array","items":{"type":"string"}}
+      },
+      "not": {"required":["error"]}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type":"string","pattern":"^[a-f0-9]{64}$"},
+    "errors": {"type":"array","items":{"type":"object"}},
+    "configuration": {
+      "type": "object",
+      "required": [
+        "name",
+        "id",
+        "mcu",
+        "linker_scripts",
+        "defines",
+        "include_paths",
+        "build_paths",
+        "prebuild_step",
+        "postbuild_step"
+      ],
+      "properties": {
+        "name": {"anyOf":[{"type":"string"},{"type":"null"}]},
+        "id": {"anyOf":[{"type":"string"},{"type":"null"}]},
+        "mcu": {"type":"array","items":{"type":"string"}},
+        "linker_scripts": {"type":"array","items":{"type":"string"}},
+        "defines": {"type":"array","items":{"type":"string"}},
+        "include_paths": {"type":"array","items":{"type":"string"}},
+        "build_paths": {"type":"array","items":{"type":"string"}},
+        "prebuild_step": {"type":"string"},
+        "postbuild_step": {"type":"string"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["file","sha256"],
+      "properties": {"file":{"type":"string"},"sha256":{"$ref":"#/$defs/sha256"}}
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "path",
+        "name",
+        "folder_name",
+        "has_cproject",
+        "configurations",
+        "mcu",
+        "ioc_files",
+        "linked_resources",
+        "referenced_projects",
+        "relative_path"
+      ],
+      "properties": {
+        "path": {"type":"string"},
+        "name": {"type":"string"},
+        "folder_name": {"type":"string"},
+        "has_cproject": {"type":"boolean"},
+        "configurations": {"type":"array","items":{"type":"string"}},
+        "mcu": {"type":"array","items":{"type":"string"}},
+        "ioc_files": {"type":"array","items":{"type":"string"}},
+        "linked_resources": {"type":"array","items":{"type":"object"}},
+        "referenced_projects": {"type":"array","items":{"type":"string"}},
+        "relative_path": {"type":"string"}
+      }
+    },
+    "file": {
+      "type": "object",
+      "required": ["sha256","bytes","category"],
+      "properties": {
+        "sha256": {"$ref":"#/$defs/sha256"},
+        "bytes": {"type":"integer","minimum":0},
+        "category": {"enum":["source","linker","cubemx","project_metadata"]}
+      }
+    },
+    "change": {
+      "type": "object",
+      "required": ["path","category","status","before","after"],
+      "properties": {
+        "path": {"type":"string"},
+        "category": {"type":"string"},
+        "status": {"enum":["added","removed","modified","newly_observed","unobserved_after"]},
+        "before": {"anyOf":[{"$ref":"#/$defs/file"},{"type":"null"}]},
+        "after": {"anyOf":[{"$ref":"#/$defs/file"},{"type":"null"}]},
+        "text_diff": {"type":"array","items":{"type":"string"}},
+        "text_diff_truncated": {"type":"boolean"},
+        "normalized_text_equal": {"type":"boolean"},
+        "text_diff_omitted": {"type":"string"}
+      }
+    },
+    "enum_member": {
+      "type": "object",
+      "required": ["name","value","line"],
+      "properties": {"name":{"type":"string"},"value":{"type":"integer"},"line":{"type":"integer","minimum":1}}
+    },
+    "command_source": {
+      "type": "object",
+      "required": ["file","sha256","enums","unresolved_members"],
+      "properties": {
+        "file": {"type":"string"},
+        "sha256": {"$ref":"#/$defs/sha256"},
+        "enums": {"type":"object","additionalProperties":{"type":"array","items":{"$ref":"#/$defs/enum_member"}}},
+        "unresolved_members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["enum","name","line"],
+            "properties": {"enum":{"type":"string"},"name":{"type":"string"},"line":{"type":"integer","minimum":1}}
+          }
+        }
+      }
+    }
+  }
+}

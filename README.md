@@ -6,7 +6,7 @@
 
 An offline STM32 toolkit with structured JSON reports and a portable agent skill.
 
-[![CLI version 0.2.0](https://img.shields.io/badge/CLI-v0.2.0-2563eb?style=flat-square)](.agents/skills/stm32-workbench/scripts/stm32kit/__init__.py)
+[![CLI version 0.3.0](https://img.shields.io/badge/CLI-v0.3.0-2563eb?style=flat-square)](.agents/skills/stm32-workbench/scripts/stm32kit/__init__.py)
 [![Python 3.10 or newer](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square)](#requirements)
 [![Standard library only](https://img.shields.io/badge/runtime-standard_library-0f766e?style=flat-square)](#requirements)
 [![MIT license](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](LICENSE)
@@ -31,7 +31,7 @@ cd oh-my-stm32
 python stm32tool.py --version
 ```
 
-Expected version: `0.2.0`. Use `python3` if that is your Python 3 command.
+Expected version: `0.3.0`. Use `python3` if that is your Python 3 command.
 
 ### 2. Run the bundled demo
 
@@ -49,7 +49,10 @@ Key fields from the JSON result:
   "vectors_checked": 2,
   "invalid_frames_checked": 3,
   "errors": [],
-  "hardware_access": false
+  "hardware_access": false,
+  "schema_version": "1.0",
+  "toolkit_version": "0.3.0",
+  "operation": "frame.verify"
 }
 ```
 
@@ -87,6 +90,8 @@ For CMake/Make, Keil, and IAR projects, the agent guides cover inspection of nat
 | Protocol demo | [Specification](.agents/skills/stm32-workbench/references/frame.example.json) · [Reference vectors](.agents/skills/stm32-workbench/references/frame-vectors.example.json) | A runnable example with valid and invalid frames |
 | Regression suite | [`tests/`](tests/) | Synthetic fixtures for project, comparison, protocol, and CLI behavior |
 | Verification record | [`docs/validation.md`](docs/validation.md) | Recorded environments, results, coverage, and limits |
+| JSON result contract | [Schema](.agents/skills/stm32-workbench/references/result-v1.schema.json) · [Compatibility policy](.agents/skills/stm32-workbench/references/output-contract.md) | Versioned output for automation consumers |
+| Build verification | [`verify_cubeide.py`](scripts/verify_cubeide.py) | Explicit compilation of a copied synthetic fixture with an installed CubeIDE |
 
 The complete `.agents/skills/stm32-workbench/` folder also works independently of the repository entry point.
 
@@ -171,6 +176,8 @@ The codec supports a fixed byte envelope with configurable integer fields and si
 
 Commands return JSON to stdout. Add `--output NEW_FILE` before the command to save a report; create its parent directory first. Existing files are never overwritten.
 
+JSON results and caught runtime errors include `schema_version`, `toolkit_version`, and `operation`. Existing fields stay at the top level, including the numeric wire `command` in frame results. See the [output contract](.agents/skills/stm32-workbench/references/output-contract.md) for compatibility rules and the published schema.
+
 ```sh
 python stm32tool.py --output reports/inventory-first.json inventory --root /path/to/firmware
 ```
@@ -187,14 +194,15 @@ Keep local reports in git-ignored `reports/` and personal paths in `profiles/*.l
 
 ## Validation
 
-**46 tests passed** in the recorded Windows/Python 3.13.11 run. The [validation record](docs/validation.md) also documents the earlier macOS run and the limits of both.
+**59 tests passed on each of five Python versions**, from 3.10 through 3.14, on Windows. A separate real CubeIDE smoke run compiled and linked both Debug and Release. The [validation record](docs/validation.md) records exact versions, artifact hashes, and scope.
 
 | Check | Recorded result |
 |---|---|
-| Regression suite | 46 passed, no skips |
+| Regression suite | 59 passed per interpreter on Windows; Python 3.10, 3.11, 3.12, 3.13, and 3.14 |
 | Standalone skill | Two reference frames matched; three invalid frames rejected |
-| Skill structure | Validator passed |
-| Minimum-version syntax | All 10 Python files parsed using Python 3.10 syntax rules |
+| JSON result contract | 16 CLI transcripts accepted; seven incompatible samples rejected |
+| Real CubeIDE build | Debug and Release produced ARM ELF and map files; original fixture hashes unchanged |
+| CI configuration | 15 jobs across Ubuntu, Windows, macOS, and Python 3.10–3.14 |
 
 Run the suite from the repository root:
 
@@ -202,7 +210,9 @@ Run the suite from the repository root:
 python -m unittest discover -s tests -v
 ```
 
-Python 3.10 syntax checks do not establish execution under that interpreter. Static analysis and host tests do not establish ARM build success, ELF provenance, flash behavior, or device compatibility. Those results require separate build or hardware evidence.
+The [CI workflow](.github/workflows/ci.yml) runs the suite, standalone check, and schema validation. Configured matrix jobs are separate from recorded execution results. The local CubeIDE run validates the synthetic fixture; board operation, flashing, serial communication, and ST-LINK remain untested.
+
+See [development and build verification](docs/development.md) to reproduce the checks or run the explicit CubeIDE harness. The CLI's `build-plan` command continues to generate commands without executing them.
 
 ## Reference library
 

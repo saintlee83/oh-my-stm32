@@ -8,6 +8,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 from .project import PRUNED, digest, read_text, require_dir
+from .reporting import check_inventory_version
 
 
 INVENTORY_FIELDS = ("name", "has_cproject", "configurations", "mcu", "ioc_files",
@@ -22,6 +23,7 @@ def _inventory(path: Path) -> tuple[dict, dict]:
     if (not isinstance(report, dict) or not isinstance(report.get("projects"), list)
             or not isinstance(report.get("errors"), list)):
         raise ValueError(f"Expected an inventory report with projects/errors lists: {path}")
+    check_inventory_version(report)
     indexed = {}
     for item in report["projects"]:
         if not isinstance(item, dict) or not isinstance(item.get("relative_path"), str) or not isinstance(item.get("name"), str):

@@ -12,6 +12,8 @@ Global options precede the command. Use `--help` on the entry point or a subcomm
 
 Successful command results are JSON on stdout, or in the file named by `--output`. The output file is created exclusively: its parent directory must exist, and an existing file is never overwritten. Input and file-access errors are returned as a JSON `error` on stderr. Argument-parser errors and help use ordinary CLI text.
 
+Since toolkit 0.3.0, JSON results and caught runtime errors include `schema_version`, `toolkit_version`, and `operation`. Existing result fields are preserved. Read the [output contract](output-contract.md) for the schema, compatibility policy, and legacy inventory support.
+
 | Code | Meaning |
 |---|---|
 | `0` | The operation returned no entries in its `errors` list |

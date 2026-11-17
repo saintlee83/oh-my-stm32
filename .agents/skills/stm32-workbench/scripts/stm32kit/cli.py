@@ -9,6 +9,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 from . import __version__, compare, project, protocol
+from .reporting import report
 
 
 def expanded(value: str, base: Path) -> Path:
@@ -68,6 +69,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    command = args.action + ("." + args.operation if args.action == "frame" else "")
     try:
         profile = {}
         base = Path.cwd()
@@ -131,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             result.update(spec_file=str(args.spec.resolve()), spec_sha256=project.digest(args.spec))
         else:
             result = protocol.contract(args.commands, args.firmware, args.enum_names)
-        output = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+        output = json.dumps(report(result, command), ensure_ascii=False, indent=2) + "\n"
         if args.output:
             # Exclusive create protects unrelated source files even when a path is mistyped.
             with args.output.open("x", encoding="utf-8", newline="\n") as stream:
@@ -140,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
             print(output, end="")
         return 1 if result.get("errors") else 0
     except (OSError, ValueError, ET.ParseError, SyntaxError) as exc:
-        print(json.dumps({"error": str(exc)}, ensure_ascii=False), file=sys.stderr)
+        print(json.dumps(report({"error": str(exc)}, command), ensure_ascii=False), file=sys.stderr)
         return 2
 
 
